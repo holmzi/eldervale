@@ -149,7 +149,7 @@ def fetch():
     require(draft["draft"] and not draft["prerelease"], "The release must be an unpublished stable draft")
     require(draft["target_commitish"] == os.environ["GITHUB_REF_NAME"],
             "Select the default branch as the draft release target")
-    final_name = f"Eldervale-{tag.removeprefix('v')}.mrpack"
+    final_name = "Eldervale.mrpack"
     pending_name = final_name + ".prepared"
     items = assets(draft["id"])
     sources = mrpacks(items)
