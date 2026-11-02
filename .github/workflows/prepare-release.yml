@@ -1,5 +1,5 @@
-name: Prepare and publish Eldervale
-run-name: Publish Eldervale ${{ inputs.tag }}
+name: Prepare and publish
+run-name: Publish ${{ inputs.tag }}
 
 on:
   workflow_dispatch:
@@ -72,3 +72,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/scripts/release.py publish
+

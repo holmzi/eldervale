@@ -276,7 +276,7 @@ def publish():
     require(not result["draft"] and not result["prerelease"], "GitHub did not publish the stable release")
     latest = api(f"repos/{REPO}/releases/latest")
     require(latest["id"] == release_id, "Release was published, but GitHub did not mark it Latest")
-    summary = (f"### Eldervale {receipt['release']['tag_name']} published\n\n"
+    summary = (f"### {receipt['release']['tag_name']} published\n\n"
                f"{result['html_url']}\n\n"
                f"Managed files: {receipt['files']}\n\nSHA-256: `{receipt['sha256']}`\n")
     with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as stream:
@@ -294,3 +294,4 @@ if __name__ == "__main__":
         # Do not print untrusted release text as a GitHub Actions workflow command.
         print("Release preparation failed: " + str(error).replace("\n", " ").replace("\r", " "), file=sys.stderr)
         sys.exit(1)
+
