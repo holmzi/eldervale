@@ -1,0 +1,72 @@
+name: Prepare and publish Eldervale
+run-name: Publish Eldervale ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Draft release tag (for example: 1.0.2)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eldervale-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'holmzi/eldervale' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Download draft and previous release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: python3 .github/scripts/release.py fetch
+      - name: Build the release preparer
+        run: bash gradlew --no-daemon --console=plain -p helper jar
+      - name: Validate and prepare the modpack
+        run: python3 .github/scripts/release.py prepare
+      - name: Transfer the prepared archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: prepared-release-${{ github.run_id }}
+          path: |
+            release-work/prepared.mrpack
+            release-work/receipt.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+          overwrite: true
+
+  publish:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: prepared-release-${{ github.run_id }}
+          path: release-work
+      - name: Verify upload and publish Latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/release.py publish

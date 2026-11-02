@@ -1,0 +1,26 @@
+plugins {
+    id "java"
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+sourceSets.main.java.srcDir("../shared/src/main/java")
+repositories {
+    mavenCentral()
+}
+dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
+}
+tasks.named("jar", Jar) {
+    archiveFileName = "updater.jar"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes("Main-Class": "dev.holmzi.eldervale.updater.helper.Main")
+    }
+    from({
+        configurations.runtimeClasspath.collect { zipTree(it) }
+    })
+    exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "**/module-info.class")
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = 21
+}
