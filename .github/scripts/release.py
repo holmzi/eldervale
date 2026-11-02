@@ -237,7 +237,8 @@ def publish():
             "Another .mrpack was attached during preparation")
     label = "eldervale-updater:sha256:" + receipt["sha256"]
     # A retry after renaming can use the already prepared final asset directly.
-    already_final = source["name"] == receipt["final_name"] and source.get("label") == label
+    already_final = source["name"] == receipt["final_name"] and (
+        source.get("label") == label or source.get("digest") == "sha256:" + receipt["sha256"])
     if already_final:
         candidate = source
     else:
@@ -262,9 +263,9 @@ def publish():
     # Until this point the original export is intact. Only the verified replacement survives below.
     if source["id"] != candidate["id"]:
         api(f"repos/{REPO}/releases/assets/{int(source['id'])}", method="DELETE")
-    if candidate["name"] != receipt["final_name"]:
+    if candidate["name"] != receipt["final_name"] or candidate.get("label"):
         candidate = api(f"repos/{REPO}/releases/assets/{int(candidate['id'])}", method="PATCH",
-                        body={"name": receipt["final_name"], "label": label})
+                        body={"name": receipt["final_name"], "label": ""})
     final_assets = mrpacks(assets(release_id))
     require(len(final_assets) == 1 and asset_snapshot(final_assets[0]) == asset_snapshot(candidate),
             "Unexpected final release assets; draft was not published")
